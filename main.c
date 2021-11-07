@@ -91,16 +91,20 @@ void PORT3_IRQHandler(void)
 {
     uint32_t status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
 
-    /*When right sensor detects line*/
+    /*When left sensor detects line*/
     if (status & GPIO_PIN6){
+        /* While right sensor is detecting line*/
+        /* Move left*/
         if(GPIO_getInputPinValue(GPIO_PORT_P3, GPIO_PIN7) == 1){
-            right_wheel.dutycycle = 1000;
-            left_wheel.dutycycle = 0;
+            right_wheel.dutycycle = 0;
+            left_wheel.dutycycle = 1000;
 
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
         }
 
+        /* When right sensor no longer detects a line*/
+        /* Continue Straight*/
         else{
             right_wheel.dutycycle = 5000;
             left_wheel.dutycycle = 5000;
@@ -117,18 +121,20 @@ void PORT5_IRQHandler(void)
 {
     uint32_t status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P5);
 
-    /*When right sensor detects line*/
+    /*When left sensor detects line*/
     if (status & GPIO_PIN5){
-        /* While right sensor is detecting line*/
+        /* While left sensor is detecting line*/
+        /* Move right*/
         if(GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN5) == 1){
-            right_wheel.dutycycle = 0;
-            left_wheel.dutycycle = 1000;
+            right_wheel.dutycycle = 1000;
+            left_wheel.dutycycle = 0;
 
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
         }
 
         /* When right sensor no longer detects a line*/
+        /* Continue Straight*/
         else{
             right_wheel.dutycycle = 5000;
             left_wheel.dutycycle = 5000;
