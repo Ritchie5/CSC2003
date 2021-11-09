@@ -115,6 +115,8 @@ void PORT3_IRQHandler(void)
            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
            GPIO_clearInterruptFlag(GPIO_PORT_P3, status_3);
        }
+       Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+       Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
     }
 }
 
@@ -138,6 +140,8 @@ void PORT5_IRQHandler(void)
            GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
            GPIO_clearInterruptFlag(GPIO_PORT_P5, status_5);
        }
+       Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+       Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
     }
 }
 

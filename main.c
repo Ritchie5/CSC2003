@@ -92,7 +92,7 @@ void PORT3_IRQHandler(void)
     uint32_t status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
 
     /*When left sensor detects line*/
-    if (status & GPIO_PIN6){
+    if (status & GPIO_PIN7){
         /* While right sensor is detecting line*/
         /* Move left*/
         if(GPIO_getInputPinValue(GPIO_PORT_P3, GPIO_PIN7) == 1){
