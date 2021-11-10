@@ -78,11 +78,11 @@ int main(void)
     GPIO_clearInterruptFlag(GPIO_PORT_P3, GPIO_PIN7);
     GPIO_enableInterrupt(GPIO_PORT_P3, GPIO_PIN7);
 
-    /* Configuring P5.5 as Input. Line sensor (left)*/
-    GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P5, GPIO_PIN5);
-    GPIO_interruptEdgeSelect(GPIO_PORT_P5, GPIO_PIN5, GPIO_LOW_TO_HIGH_TRANSITION);
-    GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN5);
-    GPIO_enableInterrupt(GPIO_PORT_P5, GPIO_PIN5);
+    /* Configuring P5.1 as Input. Line sensor (left)*/
+    GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P5, GPIO_PIN1);
+    GPIO_interruptEdgeSelect(GPIO_PORT_P5, GPIO_PIN1, GPIO_LOW_TO_HIGH_TRANSITION);
+    GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN1);
+    GPIO_enableInterrupt(GPIO_PORT_P5, GPIO_PIN1);
 
     /* Enabling interrupts */
     Interrupt_enableInterrupt(INT_PORT3);
@@ -123,9 +123,9 @@ void PORT5_IRQHandler(void)
     uint32_t status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P5);
 
     /*When Line Sensor (left) detects change from light to dark*/
-    if (status & GPIO_PIN5){
+    if (status & GPIO_PIN1){
         /*When Line Sensor detects dark*/
-        if(GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN5) == 1){
+        if(GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN1) == 1){
            left_wheel.dutyCycle = 8000;
            right_wheel.dutyCycle = 0;
            Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
