@@ -175,13 +175,13 @@ void TA1_0_IRQHandler(void)
     if (notch_difference >= 100 || notch_difference <= -100 ){
         if (notchesdetected_left > notchesdetected_right)
         {
-            left_wheel.dutyCycle += 100;
+            right_wheel.dutyCycle += 100;
             GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
 
         if (notchesdetected_right > notchesdetected_left)
         {
-            right_wheel.dutyCycle += 100;
+            left_wheel.dutyCycle += 100;
             GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
         }
 
