@@ -21,7 +21,7 @@
 #include <stdbool.h>
 
 /* PID */
-#define TIMER_PERIOD 0x5BAE
+#define TIMER_PERIOD 0x2DC6
 #define Wheelcircumference 20.42035
 
 /* PID: Wheel Encoder Variable */
@@ -176,7 +176,7 @@ void TA1_0_IRQHandler(void)
         right_wheel.dutyCycle += 100 * speed_difference;
     }
 
-    if (notchesdetected_left > notchesdetected_right)
+    if (notchesdetected_right > notchesdetected_left)
     {
         speed_difference = notchesdetected_right - notchesdetected_left;
         left_wheel.dutyCycle += 100 * speed_difference;
