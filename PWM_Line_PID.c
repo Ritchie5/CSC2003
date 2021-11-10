@@ -76,6 +76,18 @@ void PID_Config(){
     GPIO_enableInterrupt(GPIO_PORT_P4, GPIO_PIN3);
 }
 
+void LED_Config(){
+    /* LED: Configuring Output Light.*/
+    GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
+    GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+    GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN0);
+    GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN0);
+    GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN1);
+    GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
+    GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN2);
+    GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN2);
+}
+
 void LineSensor_Config(){
     /* Line sensor: Configuring Output Light.*/
     GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
@@ -128,6 +140,9 @@ int main(void)
     /* Motor: Configuring Motor GPIO Pins*/
     Motor_Config();
 
+    /* LED: Debugging purpose*/
+    LED_Config();
+
     /* Configuring Timer_A to have a period of approximately 8 micro sec and duty cycle of 50% of that (5000 ticks)  */
     Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
     Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
@@ -154,15 +169,44 @@ int main(void)
 //PID: Runs every one second to maintain straightness
 void TA1_0_IRQHandler(void)
 {
-    float speed_difference;
+    float notch_difference; 
+    notch_difference = notchesdetected_left - notchesdetected_right;
+    // Add Threshold of difference of 60 notches (3 wheels rotation) between right wheel and left wheel before triggering PID controller
+    if (notch_difference >= 100 || notch_difference <= -100 ){
+        if (notchesdetected_left > notchesdetected_right)
+        {
+            left_wheel.dutyCycle += 100;
+            GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+        }
 
-    //Getting Wheel Rotations
-    notchesdetected_left = notchesdetected_left / 20;
-    notchesdetected_right = notchesdetected_right / 20;
+        if (notchesdetected_right > notchesdetected_left)
+        {
+            right_wheel.dutyCycle += 100;
+            GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+        }
 
-    //Getting Distance
-    notchesdetected_left = notchesdetected_left * Wheelcircumference;
-    notchesdetected_right = notchesdetected_right * Wheelcircumference;
+        //Keeps PWM speed under 5100
+        if (right_wheel.dutyCycle >= 5100 || left_wheel.dutyCycle >= 5100)
+        {
+            right_wheel.dutyCycle -= 100;
+            left_wheel.dutyCycle -= 100;
+        }
+
+        //Adjust wheel speed accordingly
+        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+
+        //Reset Notches
+        notchesdetected_left = 0;
+        notchesdetected_right = 0;
+    }  
+    // //Getting Wheel Rotations
+    // notchesdetected_left = notchesdetected_left / 20;
+    // notchesdetected_right = notchesdetected_right / 20;
+
+    // //Getting Distance
+    // notchesdetected_left = notchesdetected_left * Wheelcircumference;
+    // notchesdetected_right = notchesdetected_right * Wheelcircumference;
 
     //Getting Speed
     //Unnecessary as time is one second. 
@@ -171,21 +215,21 @@ void TA1_0_IRQHandler(void)
 
     //Compare Speed
     //Adjust Speed accordingly
-    if (notchesdetected_left > notchesdetected_right)
-    {
-        // speed_difference = notchesdetected_left - notchesdetected_right;
-        // right_wheel.dutyCycle += 100 * speed_difference;
-        right_wheel.dutyCycle = 5100;
-        left_wheel.dutyCycle = 5000;
-    }
+    // if (notchesdetected_left > notchesdetected_right)
+    // {
+    //     // speed_difference = notchesdetected_left - notchesdetected_right;
+    //     // right_wheel.dutyCycle += 100;
+    //     right_wheel.dutyCycle = 5000;
+    //     left_wheel.dutyCycle = 5500;
+    // }
 
-    if (notchesdetected_right > notchesdetected_left)
-    {
-        // speed_difference = notchesdetected_right - notchesdetected_left;
-        // left_wheel.dutyCycle += 100 * speed_difference;
-        right_wheel.dutyCycle = 5000;
-        left_wheel.dutyCycle = 5100;
-    }
+    // if (notchesdetected_right > notchesdetected_left)
+    // {
+    //     // speed_difference = notchesdetected_right - notchesdetected_left;
+    //     // left_wheel.dutyCycle += 100 * speed_difference;
+    //     right_wheel.dutyCycle = 5000;
+    //     left_wheel.dutyCycle = 5500;
+    // }
 
     // //Keeps PWM speed under 5200
     // if (right_wheel.dutyCycle >= 5200 || left_wheel.dutyCycle >= 5200)
@@ -195,14 +239,15 @@ void TA1_0_IRQHandler(void)
     // }
 
     //Adjust wheel speed accordingly
-    Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
-    Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+    // Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+    // Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
 
-    //Reset Notches
-    notchesdetected_left = 0;
-    notchesdetected_right = 0;
+    // //Reset Notches
+    // notchesdetected_left = 0;
+    // notchesdetected_right = 0;
 
     //Resets Timer for 1 Second Interrupt
+    GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN2);
     MAP_Timer_A_clearCaptureCompareInterrupt(TIMER_A1_BASE,
                                              TIMER_A_CAPTURECOMPARE_REGISTER_0);
 }
