@@ -153,24 +153,24 @@ void TA1_0_IRQHandler(void)
     // notch_difference = notchesdetected_left - notchesdetected_right;
     // Add Threshold of difference of 60 notches (3 wheels rotation) between right wheel and left wheel before triggering PID controller
     // if (notch_difference >= 100 || notch_difference <= -100 ){
-    if(notchesdetected_left > 40 || notchesdetected_right > 40){
+    if(notchesdetected_left > 1 && notchesdetected_right > 1){
         if (notchesdetected_left > notchesdetected_right)
         {
-            right_wheel.dutyCycle += 100;
+            right_wheel.dutyCycle += 300;
             GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
 
         if (notchesdetected_right > notchesdetected_left)
         {
-            left_wheel.dutyCycle += 100;
+            left_wheel.dutyCycle += 300;
             GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
         }
 
         //Keeps PWM speed under 5100
         if (right_wheel.dutyCycle >= 5100 || left_wheel.dutyCycle >= 5100)
         {
-            right_wheel.dutyCycle -= 100;
-            left_wheel.dutyCycle -= 100;
+            right_wheel.dutyCycle -= 300;
+            left_wheel.dutyCycle -= 300;
         }
 
         //Adjust wheel speed accordingly
