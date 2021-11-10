@@ -21,7 +21,7 @@
 #include <stdbool.h>
 
 /* PID */
-#define TIMER_PERIOD 0x2DC6
+#define TIMER_PERIOD 0x5BAE
 #define Wheelcircumference 20.42035
 
 /* PID: Wheel Encoder Variable */
