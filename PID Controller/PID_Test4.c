@@ -177,7 +177,6 @@ void TA1_0_IRQHandler(void)
         notchesdetected_right = 0;
     }
 
-
     //Resets Timer for 1 Second Interrupt
     MAP_Timer_A_clearCaptureCompareInterrupt(TIMER_A1_BASE,
                                              TIMER_A_CAPTURECOMPARE_REGISTER_0);
