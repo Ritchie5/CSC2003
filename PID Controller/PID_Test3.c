@@ -128,9 +128,9 @@ int main(void)
 
     /* Enabling interrupts */
     Interrupt_enableInterrupt(INT_TA1_0);
-    // Interrupt_enableInterrupt(INT_PORT3);
+    Interrupt_disableInterrupt(INT_PORT3);
+    Interrupt_disableInterrupt(INT_PORT5);
     Interrupt_enableInterrupt(INT_PORT4);
-    // Interrupt_enableInterrupt(INT_PORT5);
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
     Interrupt_enableSleepOnIsrExit();
     Interrupt_enableMaster();
