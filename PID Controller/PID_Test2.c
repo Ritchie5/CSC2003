@@ -151,7 +151,6 @@ void TA1_0_IRQHandler(void)
     }
 
     //Resets Timer for 1 Second Interrupt
-    GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN2);
     MAP_Timer_A_clearCaptureCompareInterrupt(TIMER_A1_BASE,
                                              TIMER_A_CAPTURECOMPARE_REGISTER_0);
 }
