@@ -25,8 +25,8 @@
 #define Wheelcircumference 20.42035
 
 /* PID: Wheel Encoder Variable */
-float notchesdetected_left;
-float notchesdetected_right;
+uint32_t notchesdetected_left;
+uint32_t     notchesdetected_right;
 
 /* Motor: Timer_A PWM Configuration Parameter */
 Timer_A_PWMConfig left_wheel =
@@ -94,7 +94,7 @@ void LineSensor_Config(){
     GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN1);
     GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
     GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
-    ;
+    
 
     /* Configuring P3.7 as Input. Line sensor (right)*/
     GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P3, GPIO_PIN7);
@@ -125,7 +125,6 @@ void Motor_Config(){
     GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P2, GPIO_PIN4, GPIO_PRIMARY_MODULE_FUNCTION);
 }
 
-
 int main(void)
 {
     /* Halting the watchdog */
@@ -152,12 +151,16 @@ int main(void)
     
     /* Enabling interrupts */
     Interrupt_enableInterrupt(INT_TA1_0);
-    Interrupt_enableInterrupt(INT_PORT3);
+    // Interrupt_enableInterrupt(INT_PORT3);
     Interrupt_enableInterrupt(INT_PORT4);
-    Interrupt_enableInterrupt(INT_PORT5);
+    // Interrupt_enableInterrupt(INT_PORT5);
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
     Interrupt_enableSleepOnIsrExit();
     Interrupt_enableMaster();
+
+    // Disabling interrupts
+    Interrupt_disableInterrupt(INT_PORT3);
+    Interrupt_disableInterrupt(INT_PORT5);
 
     /* Sleeping when not in use */
     while (1)
@@ -172,7 +175,8 @@ void TA1_0_IRQHandler(void)
     float notch_difference; 
     notch_difference = notchesdetected_left - notchesdetected_right;
     // Add Threshold of difference of 60 notches (3 wheels rotation) between right wheel and left wheel before triggering PID controller
-    if (notch_difference >= 100 || notch_difference <= -100 ){
+    // if (notch_difference >= 100 || notch_difference <= -100 ){
+    if(notchesdetected_left >= 100){
         if (notchesdetected_left > notchesdetected_right)
         {
             right_wheel.dutyCycle += 100;

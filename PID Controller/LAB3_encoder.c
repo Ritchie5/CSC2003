@@ -69,13 +69,11 @@ int main(void)
     notchesdetected = 0;
     WDT_A_holdTimer();
 
-    GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P4, GPIO_PIN1);
-    GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P4, GPIO_PIN3);
+    GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P2, GPIO_PIN5);
+    GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
 
-    GPIO_clearInterruptFlag(GPIO_PORT_P4, GPIO_PIN1);
-    GPIO_clearInterruptFlag(GPIO_PORT_P4, GPIO_PIN3);
-    GPIO_enableInterrupt(GPIO_PORT_P4, GPIO_PIN1);
-    GPIO_enableInterrupt(GPIO_PORT_P4, GPIO_PIN3);
+    GPIO_clearInterruptFlag(GPIO_PORT_P2, GPIO_PIN5);
+    GPIO_enableInterrupt(GPIO_PORT_P2, GPIO_PIN5);
 
     Interrupt_enableInterrupt(INT_PORT2);
     Interrupt_enableMaster();
@@ -92,9 +90,7 @@ void PORT2_IRQHandler(void)
 {
     uint32_t status;
 
-    status = GPIO_getEnabledInterruptStatus(GPIO_PORT_P4);
-    
-
+    status = GPIO_getEnabledInterruptStatus(GPIO_PORT_P2);
     notchesdetected++;
     if(notchesdetected == 20)
     {
@@ -103,5 +99,4 @@ void PORT2_IRQHandler(void)
     }
     GPIO_clearInterruptFlag(GPIO_PORT_P2, status);
 }
-
 
