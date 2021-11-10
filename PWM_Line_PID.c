@@ -162,7 +162,7 @@ void TA1_0_IRQHandler(void)
 
     //Getting Distance
     notchesdetected_left = notchesdetected_left * Wheelcircumference;
-    notchesdetected_left = notchesdetected_left * Wheelcircumference;
+    notchesdetected_right = notchesdetected_right * Wheelcircumference;
 
     //Getting Speed
     //Unnecessary as time is one second. 
@@ -170,6 +170,7 @@ void TA1_0_IRQHandler(void)
     // notchesdetected_right = notchesdetected_right / 1;
 
     //Compare Speed
+    //Adjust Speed accordingly
     if (notchesdetected_left > notchesdetected_right)
     {
         speed_difference = notchesdetected_left - notchesdetected_right;
@@ -232,13 +233,13 @@ void PORT4_IRQHandler(void)
     uint32_t status;
 
     status = GPIO_getEnabledInterruptStatus(GPIO_PORT_P4);
-    if (status & GPIO_PIN1)
+    if (status & GPIO_PIN1) //Left Wheel
     {
         notchesdetected_left++;
     }
-    if (status & GPIO_PIN3)
+    if (status & GPIO_PIN3) //Right Wheel
     {
-        notchesdetected_left++;
+        notchesdetected_right++;
     }
 
     GPIO_clearInterruptFlag(GPIO_PORT_P4, status);
