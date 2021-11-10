@@ -138,6 +138,7 @@ int main(void)
 
 void TA1_0_IRQHandler(void)
 {
+    GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN2);
     if (notchesdetected_left > 20)
     {
         GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
