@@ -138,13 +138,13 @@ int main(void)
 
 void TA1_0_IRQHandler(void)
 {
-    if (notchesdetected_left >= 20)
+    if (notchesdetected_left > 20)
     {
         GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
         notchesdetected_left = 0;
     }
 
-    if (notchesdetected_right >= 20)
+    if (notchesdetected_right > 20)
     {
         GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
         notchesdetected_right = 0;
