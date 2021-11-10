@@ -173,22 +173,26 @@ void TA1_0_IRQHandler(void)
     //Adjust Speed accordingly
     if (notchesdetected_left > notchesdetected_right)
     {
-        speed_difference = notchesdetected_left - notchesdetected_right;
-        right_wheel.dutyCycle += 100 * speed_difference;
+        // speed_difference = notchesdetected_left - notchesdetected_right;
+        // right_wheel.dutyCycle += 100 * speed_difference;
+        right_wheel.dutyCycle = 5100;
+        left_wheel.dutyCycle = 5000;
     }
 
     if (notchesdetected_right > notchesdetected_left)
     {
-        speed_difference = notchesdetected_right - notchesdetected_left;
-        left_wheel.dutyCycle += 100 * speed_difference;
+        // speed_difference = notchesdetected_right - notchesdetected_left;
+        // left_wheel.dutyCycle += 100 * speed_difference;
+        right_wheel.dutyCycle = 5000;
+        left_wheel.dutyCycle = 5100;
     }
 
-    //Keeps PWM speed under 5200
-    if (right_wheel.dutyCycle >= 5200 || left_wheel.dutyCycle >= 5200)
-    {
-        right_wheel.dutyCycle -= 200;
-        left_wheel.dutyCycle -= 200;
-    }
+    // //Keeps PWM speed under 5200
+    // if (right_wheel.dutyCycle >= 5200 || left_wheel.dutyCycle >= 5200)
+    // {
+    //     right_wheel.dutyCycle -= 200;
+    //     left_wheel.dutyCycle -= 200;
+    // }
 
     //Adjust wheel speed accordingly
     Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
