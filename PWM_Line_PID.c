@@ -26,7 +26,7 @@
 
 /* PID: Wheel Encoder Variable */
 uint32_t notchesdetected_left;
-uint32_t     notchesdetected_right;
+uint32_t notchesdetected_right;
 
 /* Motor: Timer_A PWM Configuration Parameter */
 Timer_A_PWMConfig left_wheel =
