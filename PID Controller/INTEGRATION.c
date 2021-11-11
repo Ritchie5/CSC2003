@@ -88,6 +88,27 @@ void LED_Config()
     GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN2);
 }
 
+void LineSensor_Config()
+{
+    /* Line sensor: Configuring Output Light.*/
+    GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
+    GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN1);
+    GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+    GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
+
+    /* Configuring P3.7 as Input. Line sensor (right)*/
+    GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P3, GPIO_PIN7);
+    GPIO_interruptEdgeSelect(GPIO_PORT_P3, GPIO_PIN7, GPIO_LOW_TO_HIGH_TRANSITION);
+    GPIO_clearInterruptFlag(GPIO_PORT_P3, GPIO_PIN7);
+    GPIO_enableInterrupt(GPIO_PORT_P3, GPIO_PIN7);
+
+    /* Configuring P5.5 as Input. Line sensor (left)*/
+    GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P5, GPIO_PIN5);
+    GPIO_interruptEdgeSelect(GPIO_PORT_P5, GPIO_PIN5, GPIO_LOW_TO_HIGH_TRANSITION);
+    GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN5);
+    GPIO_enableInterrupt(GPIO_PORT_P5, GPIO_PIN5);
+}
+
 void Motor_Config()
 {
     /* Configuring P4.0 and P4.2 as Output. P2.6 as peripheral output for PWM (left wheel)*/
@@ -113,6 +134,9 @@ int main(void)
     /* PID: Configure PID(Wheel Encoder) controller GPIO Pins*/
     PID_Config();
 
+    /* Line Sensor: Configure Line Sensor GPIO Pins*/
+    LineSensor_Config();
+
     /* Motor: Configuring Motor GPIO Pins*/
     Motor_Config();
 
@@ -128,13 +152,12 @@ int main(void)
 
     /* Enabling interrupts */
     Interrupt_enableInterrupt(INT_TA1_0);
-    Interrupt_disableInterrupt(INT_PORT3);
-    Interrupt_disableInterrupt(INT_PORT5);
+    Interrupt_enableInterrupt(INT_PORT3);
     Interrupt_enableInterrupt(INT_PORT4);
+    Interrupt_enableInterrupt(INT_PORT5);
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
     Interrupt_enableSleepOnIsrExit();
     Interrupt_enableMaster();
-
 
     /* Sleeping when not in use */
     while (1)
@@ -150,18 +173,24 @@ void TA1_0_IRQHandler(void)
     // notch_difference = notchesdetected_left - notchesdetected_right;
     // Add Threshold of difference of 60 notches (3 wheels rotation) between right wheel and left wheel before triggering PID controller
     // if (notch_difference >= 100 || notch_difference <= -100 ){
+    if(notchesdetected_left > 1 && notchesdetected_right > 1){
         if (notchesdetected_left > notchesdetected_right)
         {
-            right_wheel.dutyCycle = 5100;
-            left_wheel.dutyCycle = 5000;
+            right_wheel.dutyCycle += 300;
             GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
 
         if (notchesdetected_right > notchesdetected_left)
         {
-            left_wheel.dutyCycle = 5100;
-            right_wheel.dutyCycle = 5000;
+            left_wheel.dutyCycle += 300;
             GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+        }
+
+        //Keeps PWM speed under 5100
+        if (right_wheel.dutyCycle >= 5100 || left_wheel.dutyCycle >= 5100)
+        {
+            right_wheel.dutyCycle -= 300;
+            left_wheel.dutyCycle -= 300;
         }
 
         //Adjust wheel speed accordingly
@@ -171,10 +200,66 @@ void TA1_0_IRQHandler(void)
         //Reset Notches
         notchesdetected_left = 0;
         notchesdetected_right = 0;
+    }
 
     //Resets Timer for 1 Second Interrupt
     MAP_Timer_A_clearCaptureCompareInterrupt(TIMER_A1_BASE,
                                              TIMER_A_CAPTURECOMPARE_REGISTER_0);
+}
+
+void PORT3_IRQHandler(void)
+{
+    uint32_t status_3 = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
+
+    /*When Line Sensor detects change from light to dark*/
+    // Notice that Interrupt is not cleared till vehicle detects light
+    if (status_3 & GPIO_PIN7)
+    {
+        /*When Line Sensor detects dark*/
+        if (GPIO_getInputPinValue(GPIO_PORT_P3, GPIO_PIN7) == 1)
+        {
+            left_wheel.dutyCycle = 0;
+            right_wheel.dutyCycle = 0;
+            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+        }
+        /*When Line Sensor detects light*/
+        else
+        {
+            left_wheel.dutyCycle = 5000;
+            right_wheel.dutyCycle = 5000;
+            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            GPIO_clearInterruptFlag(GPIO_PORT_P3, status_3);
+        }
+        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+    }
+}
+void PORT3_IRQHandler(void)
+{
+    uint32_t status_3 = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
+
+    /*When Line Sensor detects change from light to dark*/
+    // Notice that Interrupt is not cleared till vehicle detects light
+    if (status_3 & GPIO_PIN7)
+    {
+        /*When Line Sensor detects dark*/
+        if (GPIO_getInputPinValue(GPIO_PORT_P3, GPIO_PIN7) == 1)
+        {
+            left_wheel.dutyCycle = 0;
+            right_wheel.dutyCycle = 1000;
+            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+        }
+        /*When Line Sensor detects light*/
+        else
+        {
+            left_wheel.dutyCycle = 5000;
+            right_wheel.dutyCycle = 5000;
+            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            GPIO_clearInterruptFlag(GPIO_PORT_P3, status_3);
+        }
+        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+    }
 }
 
 //PID: Keeps a count on how many time the wheels spin
@@ -193,4 +278,32 @@ void PORT4_IRQHandler(void)
     }
 
     GPIO_clearInterruptFlag(GPIO_PORT_P4, status);
+}
+
+void PORT5_IRQHandler(void)
+{
+    uint32_t status_5 = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P5);
+
+    /*When Line Sensor detects change from light to dark*/
+    // Notice that Interrupt is not cleared till vehicle detects light
+    if (status_5 & GPIO_PIN5)
+    {
+        /*When Line Sensor detects dark*/
+        if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN5) == 1)
+        {
+            left_wheel.dutyCycle = 1000;
+            right_wheel.dutyCycle = 0;
+            GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN1);
+        }
+        /*When Line Sensor detects light*/
+        else
+        {
+            left_wheel.dutyCycle = 5000;
+            right_wheel.dutyCycle = 5000;
+            GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            GPIO_clearInterruptFlag(GPIO_PORT_P5, status_5);
+        }
+        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+    }
 }
