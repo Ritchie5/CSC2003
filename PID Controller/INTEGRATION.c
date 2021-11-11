@@ -36,7 +36,7 @@ Timer_A_PWMConfig left_wheel =
         10000,
         TIMER_A_CAPTURECOMPARE_REGISTER_1,
         TIMER_A_OUTPUTMODE_RESET_SET,
-        5000};
+        5500};
 
 /* Motor: Timer_A PWM Configuration Parameter */
 Timer_A_PWMConfig right_wheel =
