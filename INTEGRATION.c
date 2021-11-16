@@ -218,7 +218,7 @@ void PORT3_IRQHandler(void)
         /*When Line Sensor detects dark*/
         if (GPIO_getInputPinValue(GPIO_PORT_P3, GPIO_PIN7) == 1)
         {
-            left_wheel.dutyCycle = 0;
+            left_wheel.dutyCycle = 1000;
             right_wheel.dutyCycle = 0;
             GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
