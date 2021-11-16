@@ -326,7 +326,7 @@ void PORT3_IRQHandler(void)
         /*When Line Sensor detects dark*/
         if (GPIO_getInputPinValue(GPIO_PORT_P3, GPIO_PIN7) == 1)
         {
-            left_wheel.dutyCycle = 0;
+            left_wheel.dutyCycle = 1000;
             right_wheel.dutyCycle = 0;
             GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
@@ -422,8 +422,13 @@ void SysTick_Handler(void)
 
     float value = getHCSR04Distance();
     printf("\n%f", value);
-    if ((getHCSR04Distance() < MIN_DISTANCE))
+    if ((getHCSR04Distance() < MIN_DISTANCE)){
+        left_wheel.dutyCycle = 0;
+        right_wheel.dutyCycle = 0;
+        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
         GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0); /*TODO: stop the car or ....*/
-    else
+    }
+    else 
         GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0); /*TODO: stop the car or ....*/
 }
