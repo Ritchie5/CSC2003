@@ -8,7 +8,7 @@ try:
         x = input("Enter a character: ")
         ser.write(bytes(x, 'utf-8'))
         print("sent " + x)
-
+ 
         if(ser.in_waiting > 0):
             line = ser.readline()
             print(line)

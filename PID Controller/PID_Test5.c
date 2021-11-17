@@ -46,7 +46,7 @@ Timer_A_PWMConfig right_wheel =
         10000,
         TIMER_A_CAPTURECOMPARE_REGISTER_3,
         TIMER_A_OUTPUTMODE_RESET_SET,
-        5000};
+        5500};
 
 /* PID: Timer for PID controller to run every 1 second*/
 const Timer_A_UpModeConfig speed_timer =
