@@ -91,17 +91,11 @@ void LED_Config()
 
 void LineSensor_Config()
 {
-    /* Line sensor: Configuring Output Light.*/
-    GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
-    GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN1);
-    GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
-    GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
-
-    /* Configuring P3.7 as Input. Line sensor (right)*/
-    GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P3, GPIO_PIN7);
-    GPIO_interruptEdgeSelect(GPIO_PORT_P3, GPIO_PIN7, GPIO_LOW_TO_HIGH_TRANSITION);
-    GPIO_clearInterruptFlag(GPIO_PORT_P3, GPIO_PIN7);
-    GPIO_enableInterrupt(GPIO_PORT_P3, GPIO_PIN7);
+    /* Configuring P5.4 as Input. Line sensor (right)*/
+    GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P5, GPIO_PIN4);
+    GPIO_interruptEdgeSelect(GPIO_PORT_P5, GPIO_PIN4, GPIO_LOW_TO_HIGH_TRANSITION);
+    GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN4);
+    GPIO_enableInterrupt(GPIO_PORT_P5, GPIO_PIN4);
 
     /* Configuring P5.5 as Input. Line sensor (left)*/
     GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P5, GPIO_PIN5);
@@ -315,61 +309,6 @@ void TA1_0_IRQHandler(void)
                                              TIMER_A_CAPTURECOMPARE_REGISTER_0);
 }
 
-void PORT3_IRQHandler(void)
-{
-    uint32_t status_3 = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
-
-    /*When Line Sensor detects change from light to dark*/
-    // Notice that Interrupt is not cleared till vehicle detects light
-    if (status_3 & GPIO_PIN7)
-    {
-        /*When Line Sensor detects dark*/
-        if (GPIO_getInputPinValue(GPIO_PORT_P3, GPIO_PIN7) == 1)
-        {
-            left_wheel.dutyCycle = 1000;
-            right_wheel.dutyCycle = 0;
-            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
-        }
-        /*When Line Sensor detects light*/
-        else
-        {
-            left_wheel.dutyCycle = 5000;
-            right_wheel.dutyCycle = 5000;
-            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
-            GPIO_clearInterruptFlag(GPIO_PORT_P3, status_3);
-        }
-        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
-        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-    }
-}
-void PORT3_IRQHandler(void)
-{
-    uint32_t status_3 = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
-
-    /*When Line Sensor detects change from light to dark*/
-    // Notice that Interrupt is not cleared till vehicle detects light
-    if (status_3 & GPIO_PIN7)
-    {
-        /*When Line Sensor detects dark*/
-        if (GPIO_getInputPinValue(GPIO_PORT_P3, GPIO_PIN7) == 1)
-        {
-            left_wheel.dutyCycle = 0;
-            right_wheel.dutyCycle = 1000;
-            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
-        }
-        /*When Line Sensor detects light*/
-        else
-        {
-            left_wheel.dutyCycle = 5000;
-            right_wheel.dutyCycle = 5000;
-            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
-            GPIO_clearInterruptFlag(GPIO_PORT_P3, status_3);
-        }
-        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
-        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-    }
-}
-
 //PID: Keeps a count on how many time the wheels spin
 void PORT4_IRQHandler(void)
 {
@@ -391,6 +330,29 @@ void PORT4_IRQHandler(void)
 void PORT5_IRQHandler(void)
 {
     uint32_t status_5 = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P5);
+
+    /*When Line Sensor detects change from light to dark*/
+    // Notice that Interrupt is not cleared till vehicle detects light
+    if (status_5 & GPIO_PIN4)
+    {
+        /*When Line Sensor detects dark*/
+        if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN4) == 1)
+        {
+            left_wheel.dutyCycle = 0;
+            right_wheel.dutyCycle = 1000;
+            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+        }
+        /*When Line Sensor detects light*/
+        else
+        {
+            left_wheel.dutyCycle = 5000;
+            right_wheel.dutyCycle = 5000;
+            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            GPIO_clearInterruptFlag(GPIO_PORT_P5, status_5);
+        }
+        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+    }
 
     /*When Line Sensor detects change from light to dark*/
     // Notice that Interrupt is not cleared till vehicle detects light

@@ -114,17 +114,11 @@ void LED_Config()
 
 void LineSensor_Config()
 {
-    /* Line sensor: Configuring Output Light.*/
-    GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
-    GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN1);
-    GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
-    GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
-
-    /* Configuring P3.7 as Input. Line sensor (right)*/
-    GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P3, GPIO_PIN7);
-    GPIO_interruptEdgeSelect(GPIO_PORT_P3, GPIO_PIN7, GPIO_LOW_TO_HIGH_TRANSITION);
-    GPIO_clearInterruptFlag(GPIO_PORT_P3, GPIO_PIN7);
-    GPIO_enableInterrupt(GPIO_PORT_P3, GPIO_PIN7);
+    /* Configuring P5.4 as Input. Line sensor (right)*/
+    GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P5, GPIO_PIN4);
+    GPIO_interruptEdgeSelect(GPIO_PORT_P5, GPIO_PIN4, GPIO_LOW_TO_HIGH_TRANSITION);
+    GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN4);
+    GPIO_enableInterrupt(GPIO_PORT_P5, GPIO_PIN4);
 
     /* Configuring P5.5 as Input. Line sensor (left)*/
     GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P5, GPIO_PIN5);
@@ -339,12 +333,14 @@ void TA1_0_IRQHandler(void)
     {
         if (notchesdetected_left > notchesdetected_right)
         {
+            uPrintf("Adjusting Right");
             right_wheel.dutyCycle += 300;
             GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
 
         if (notchesdetected_right > notchesdetected_left)
         {
+            uPrintf("Adjusting Left");
             left_wheel.dutyCycle += 300;
             GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
         }
@@ -368,61 +364,6 @@ void TA1_0_IRQHandler(void)
     //Resets Timer for 1 Second Interrupt
     MAP_Timer_A_clearCaptureCompareInterrupt(TIMER_A1_BASE,
                                              TIMER_A_CAPTURECOMPARE_REGISTER_0);
-}
-
-void PORT3_IRQHandler(void)
-{
-    uint32_t status_3 = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
-
-    /*When Line Sensor detects change from light to dark*/
-    // Notice that Interrupt is not cleared till vehicle detects light
-    if (status_3 & GPIO_PIN7)
-    {
-        /*When Line Sensor detects dark*/
-        if (GPIO_getInputPinValue(GPIO_PORT_P3, GPIO_PIN7) == 1)
-        {
-            left_wheel.dutyCycle = 1000;
-            right_wheel.dutyCycle = 0;
-            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
-        }
-        /*When Line Sensor detects light*/
-        else
-        {
-            left_wheel.dutyCycle = 5000;
-            right_wheel.dutyCycle = 5000;
-            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
-            GPIO_clearInterruptFlag(GPIO_PORT_P3, status_3);
-        }
-        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
-        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-    }
-}
-void PORT3_IRQHandler(void)
-{
-    uint32_t status_3 = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
-
-    /*When Line Sensor detects change from light to dark*/
-    // Notice that Interrupt is not cleared till vehicle detects light
-    if (status_3 & GPIO_PIN7)
-    {
-        /*When Line Sensor detects dark*/
-        if (GPIO_getInputPinValue(GPIO_PORT_P3, GPIO_PIN7) == 1)
-        {
-            left_wheel.dutyCycle = 0;
-            right_wheel.dutyCycle = 1000;
-            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
-        }
-        /*When Line Sensor detects light*/
-        else
-        {
-            left_wheel.dutyCycle = 5000;
-            right_wheel.dutyCycle = 5000;
-            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
-            GPIO_clearInterruptFlag(GPIO_PORT_P3, status_3);
-        }
-        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
-        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-    }
 }
 
 //PID: Keeps a count on how many time the wheels spin
@@ -449,6 +390,30 @@ void PORT5_IRQHandler(void)
 
     /*When Line Sensor detects change from light to dark*/
     // Notice that Interrupt is not cleared till vehicle detects light
+    if (status_5 & GPIO_PIN4)
+    {
+        /*When Line Sensor detects dark*/
+        if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN4) == 1)
+        {
+            left_wheel.dutyCycle = 0;
+            right_wheel.dutyCycle = 1000;
+            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            uPrintf("Road on right side");
+        }
+        /*When Line Sensor detects light*/
+        else
+        {
+            left_wheel.dutyCycle = 5000;
+            right_wheel.dutyCycle = 5000;
+            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            GPIO_clearInterruptFlag(GPIO_PORT_P5, status_5);
+        }
+        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+    }
+
+    /*When Line Sensor detects change from light to dark*/
+    // Notice that Interrupt is not cleared till vehicle detects light
     if (status_5 & GPIO_PIN5)
     {
         /*When Line Sensor detects dark*/
@@ -457,6 +422,7 @@ void PORT5_IRQHandler(void)
             left_wheel.dutyCycle = 1000;
             right_wheel.dutyCycle = 0;
             GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            uPrintf("Road on left side");
         }
         /*When Line Sensor detects light*/
         else
@@ -481,12 +447,20 @@ void EUSCIA0_IRQHandler(void)
 
     if (status & EUSCI_A_UART_RECEIVE_INTERRUPT_FLAG)
     {
-        if (a == 'a')
+        if (a == 'L')
         {
+            left_wheel.dutyCycle = 1000;
+            right_wheel.dutyCycle = 0;
+            Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+            Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
-        if (a == 'b')
+        if (a == 'R')
         {
+            left_wheel.dutyCycle = 0;
+            right_wheel.dutyCycle = 1000;
+            Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+            Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
 
@@ -508,6 +482,7 @@ void SysTick_Handler(void)
         Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
         Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
         GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0); /*TODO: stop the car or ....*/
+        uPrintf("Object detected infront");
     }
     else 
         GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0); /*TODO: stop the car or ....*/
