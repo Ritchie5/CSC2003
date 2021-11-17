@@ -353,8 +353,8 @@ void PORT5_IRQHandler(void)
         if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN4) == 0)
         {
 
-            left_wheel.dutyCycle = 0;
-            right_wheel.dutyCycle = 0;
+            left_wheel.dutyCycle = 4000;
+            right_wheel.dutyCycle = 4700;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Delay(10000);
@@ -386,8 +386,8 @@ void PORT5_IRQHandler(void)
         {
             //            left_wheel.dutyCycle = 4000;
             //            right_wheel.dutyCycle = 4700;
-            left_wheel.dutyCycle = 0;
-            right_wheel.dutyCycle = 0;
+            left_wheel.dutyCycle = 4000;
+            right_wheel.dutyCycle = 4700;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Delay(10000);
