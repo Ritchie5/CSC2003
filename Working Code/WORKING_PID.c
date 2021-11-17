@@ -21,7 +21,7 @@
 #include <stdbool.h>
 
 /* PID */
-#define TIMER_PERIOD 0x5BAE
+#define TIMER_PERIOD 0x2DC6 //0x5BAE for one second
 #define Wheelcircumference 20.42035
 
 /* PID: Wheel Encoder Variable */
@@ -36,7 +36,7 @@ Timer_A_PWMConfig left_wheel =
         10000,
         TIMER_A_CAPTURECOMPARE_REGISTER_1,
         TIMER_A_OUTPUTMODE_RESET_SET,
-        5500};
+        4000};
 
 /* Motor: Timer_A PWM Configuration Parameter */
 Timer_A_PWMConfig right_wheel =
@@ -46,7 +46,7 @@ Timer_A_PWMConfig right_wheel =
         10000,
         TIMER_A_CAPTURECOMPARE_REGISTER_3,
         TIMER_A_OUTPUTMODE_RESET_SET,
-        5000};
+        4700};
 
 /* PID: Timer for PID controller to run every 1 second*/
 const Timer_A_UpModeConfig speed_timer =
@@ -149,28 +149,27 @@ int main(void)
 //PID: Runs every one second to maintain straightness
 void TA1_0_IRQHandler(void)
 {
-    float notch_difference;
-    // notch_difference = notchesdetected_left - notchesdetected_right;
     // Add Threshold of difference of 60 notches (3 wheels rotation) between right wheel and left wheel before triggering PID controller
     // if (notch_difference >= 100 || notch_difference <= -100 ){
-    if(notchesdetected_left > 1 && notchesdetected_right > 1){
+    if (notchesdetected_left > 5 || notchesdetected_right > 5)
+    {
         if (notchesdetected_left > notchesdetected_right)
         {
-            left_wheel.dutyCycle += 500;
+            left_wheel.dutyCycle += 100;
             GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
 
         if (notchesdetected_right > notchesdetected_left)
         {
-            right_wheel.dutyCycle += 500;
+            right_wheel.dutyCycle += 100;
             GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
         }
 
         //Keeps PWM speed under 5100
-        if (right_wheel.dutyCycle >= 6000 || left_wheel.dutyCycle >= 6000)
+        if (right_wheel.dutyCycle >= 4900 || left_wheel.dutyCycle >= 4900)
         {
-            right_wheel.dutyCycle -= 500;
-            left_wheel.dutyCycle -= 500;
+            right_wheel.dutyCycle -= 100;
+            left_wheel.dutyCycle -= 100;
         }
 
         //Adjust wheel speed accordingly
