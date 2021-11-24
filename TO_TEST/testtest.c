@@ -359,7 +359,7 @@ void PORT5_IRQHandler(void)
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Delay(10000);
-            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
             Interrupt_enableInterrupt(INT_TA1_0);
             SysTick_enableInterrupt();
             Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
@@ -370,14 +370,12 @@ void PORT5_IRQHandler(void)
         /*When Line Sensor detects light*/
         else if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN4) == 1)
         {
-            left_wheel.dutyCycle = 100;
-            right_wheel.dutyCycle = 2000;
+            left_wheel.dutyCycle = 1000;
+            right_wheel.dutyCycle = 3000;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-            Interrupt_disableInterrupt(INT_PORT5);
             Delay(100000);
-            Interrupt_enableInterrupt(INT_PORT5);
-            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
             notchesdetected_left = 0;
             notchesdetected_right = 0;
         }
@@ -398,8 +396,8 @@ void PORT5_IRQHandler(void)
             right_wheel.dutyCycle = 4700;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-            Delay(10000);
-            GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            Delay(100000);
+            GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
             Interrupt_enableInterrupt(INT_TA1_0);
             SysTick_enableInterrupt();
             GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN5);
@@ -409,14 +407,12 @@ void PORT5_IRQHandler(void)
         /*When Line Sensor detects light*/
         else if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN5) == 1)
         {
-            left_wheel.dutyCycle = 2000;
-            right_wheel.dutyCycle = 100;
+            left_wheel.dutyCycle = 3000;
+            right_wheel.dutyCycle = 1000;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-            Interrupt_disableInterrupt(INT_PORT5);
             Delay(100000);
-            Interrupt_enableInterrupt(INT_PORT5);
-            GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
             notchesdetected_left = 0;
             notchesdetected_right = 0;
         }
@@ -427,7 +423,7 @@ void SysTick_Handler(void)
 {
     float value = getHCSR04Distance();
     printf("%f\n", value);
-    if (value < MIN_DISTANCE)
+    if (value < 10) //MIN_DISTANCE)
     {
 
         Interrupt_disableInterrupt(INT_TA1_0);

@@ -36,6 +36,23 @@ uint32_t notchesdetected_left;
 uint32_t notchesdetected_right;
 uint32_t car_position;
 
+unsigned char smasher07;
+
+/* UART Configuration Parameter */
+const eUSCI_UART_ConfigV1 uartConfig =
+    {
+        EUSCI_A_UART_CLOCKSOURCE_SMCLK,                // SMCLK Clock Source
+        78,                                            // BRDIV = 78
+        2,                                             // UCxBRF = 2
+        0,                                             // UCxBRS = 0
+        EUSCI_A_UART_NO_PARITY,                        // NO Parity
+        EUSCI_A_UART_LSB_FIRST,                        // LSB First
+        EUSCI_A_UART_ONE_STOP_BIT,                     // One stop bit
+        EUSCI_A_UART_MODE,                             // UART mode
+        EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION, // Oversampling
+        EUSCI_A_UART_8_BIT_LEN                         // 8 bit data length
+};
+
 /* Motor: Timer_A PWM Configuration Parameter */
 Timer_A_PWMConfig left_wheel =
     {
@@ -232,9 +249,41 @@ void Motor_Config()
     GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P2, GPIO_PIN4, GPIO_PRIMARY_MODULE_FUNCTION);
 }
 
+// UART ================================================================================================================================================================
+void UART_Config(void)
+{
+    /* Selecting P1.2 and P1.3 in UART mode */
+    GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1, GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
+
+    /* Setting DCO to 12MHz */
+    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_12);
+
+    /* Configuring UART Module */
+    UART_initModule(EUSCI_A0_BASE, &uartConfig);
+
+    /* Enable UART module */
+    UART_enableModule(EUSCI_A0_BASE);
+
+    /* Enabling interrupts (Rx) */
+    UART_enableInterrupt(EUSCI_A0_BASE, EUSCI_A_UART_RECEIVE_INTERRUPT);
+    Interrupt_enableInterrupt(INT_EUSCIA0);
+}
+
+void uPrintf(unsigned char *TxArray)
+{
+    unsigned short i = 0;
+    while (*(TxArray + i))
+    {
+        UART_transmitData(EUSCI_A0_BASE, *(TxArray + i)); // Write the character at the location specified by pointer
+        i++;                                              // Increment pointer to point to the next character
+    }
+}
+// ================================================================================================================================================================
+
 int main(void)
 {
     car_position = 1;
+    smasher07 = 'b';
 
     /* Halting the watchdog */
     MAP_WDT_A_holdTimer();
@@ -250,6 +299,9 @@ int main(void)
 
     /* Line Sensor: Configuring Line Sensor pins*/
     LineSensor_Config();
+
+    /* UART: Configure UART GPIO Pins */
+    UART_Config();
 
     Initalise_HCSR04();
 
@@ -275,6 +327,8 @@ int main(void)
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
     Interrupt_enableSleepOnIsrExit();
     Interrupt_enableMaster();
+
+    uPrintf("\r\n");
 
     /* Sleeping when not in use */
     while (1)
@@ -429,42 +483,69 @@ void SysTick_Handler(void)
     printf("%f\n", value);
     if (value < MIN_DISTANCE)
     {
-
-        Interrupt_disableInterrupt(INT_TA1_0);
-        Interrupt_disableInterrupt(INT_PORT5);
-        if (car_position == 1)
+        if (smasher07 == 'a')
         {
-            right_wheel.dutyCycle = 2000;
-            left_wheel.dutyCycle = 100;
+            Interrupt_disableInterrupt(INT_TA1_0);
+            Interrupt_disableInterrupt(INT_PORT5);
+            if (car_position == 1)
+            {
+                right_wheel.dutyCycle = 2000;
+                left_wheel.dutyCycle = 100;
+                GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            }
+
+            if (car_position == 0)
+            {
+                right_wheel.dutyCycle = 100;
+                left_wheel.dutyCycle = 2000;
+                GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            }
+
+            if (car_position == 1)
+            {
+                car_position = 0;
+            }
+            else if (car_position == 0)
+            {
+                car_position = 1;
+            }
+
+            //Adjust wheel speed accordingly
+            Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+            Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+            SysTick_disableInterrupt();
+            Delay(100000);
+
+            left_wheel.dutyCycle = 4000;
+            right_wheel.dutyCycle = 4700;
+            Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+            Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+            Interrupt_enableInterrupt(INT_PORT5);
+            smasher07 = 'b';
+        }
+    }
+}
+
+/* EUSCI A0 UART ISR */
+void EUSCIA0_IRQHandler(void)
+{
+    uint32_t status = UART_getEnabledInterruptStatus(EUSCI_A0_BASE);
+    unsigned char a = 0;
+
+    a = UART_receiveData(EUSCI_A0_BASE);
+
+    if (status & EUSCI_A_UART_RECEIVE_INTERRUPT_FLAG)
+    {
+        if (a == 'a')
+        {
+            smasher07 = 'a';
             GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
-
-        if (car_position == 0)
-        {
-            right_wheel.dutyCycle = 100;
-            left_wheel.dutyCycle = 2000;
-            GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
-        }
-
-        if (car_position == 1)
-        {
-            car_position = 0;
-        }
-        else if (car_position == 0)
-        {
-            car_position = 1;
-        }
-
-        //Adjust wheel speed accordingly
-        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
-        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-        SysTick_disableInterrupt();
         Delay(100000);
 
-        left_wheel.dutyCycle = 4000;
-        right_wheel.dutyCycle = 4700;
-        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
-        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-        Interrupt_enableInterrupt(INT_PORT5);
+        //UART_transmitData(EUSCI_A0_BASE, UART_receiveData(EUSCI_A0_BASE));
+        //uPrintf("\r\n");
     }
+
+    UART_clearInterruptFlag(EUSCI_A0_BASE, status);
 }

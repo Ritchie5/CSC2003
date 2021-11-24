@@ -22,19 +22,19 @@
 #include <stdio.h>
 
 /* Ultra Sonic  */
-#define MIN_DISTANCE 15.0f
+#define MIN_DISTANCE 10.0f
 #define TICKPERIOD 1000
 
 uint32_t SR04IntTimes;
 
 /* PID */
-#define TIMER_PERIOD 0x2DC6 //0x5BAE for one second
+#define TIMER_PERIOD 0x2DC6   //0x5BAE for one second
+#define TIMER_PERIOD1 0x1130A //0x5BAE for one second
 #define Wheelcircumference 20.42035
 
 /* PID: Wheel Encoder Variable */
 uint32_t notchesdetected_left;
 uint32_t notchesdetected_right;
-uint32_t car_position;
 
 /* Motor: Timer_A PWM Configuration Parameter */
 Timer_A_PWMConfig left_wheel =
@@ -62,6 +62,16 @@ const Timer_A_UpModeConfig speed_timer =
         TIMER_A_CLOCKSOURCE_SMCLK,          // SMCLK Clock Source
         TIMER_A_CLOCKSOURCE_DIVIDER_64,     // 1.5MHz/64 = 23437Hz  period = 1/15625Hz = 0.0000426
         TIMER_PERIOD,                       // When reach 23470, will trigger interrupt.  Delay/0.0000426 = 23470. Delay = 0.99 seconds
+        TIMER_A_TAIE_INTERRUPT_DISABLE,     // Disable Timer interrupt
+        TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE, // Enable CCR0 interrupt
+        TIMER_A_DO_CLEAR                    // Clear value
+};
+
+const Timer_A_UpModeConfig ultrasonic_timer =
+    {
+        TIMER_A_CLOCKSOURCE_SMCLK,          // SMCLK Clock Source
+        TIMER_A_CLOCKSOURCE_DIVIDER_64,     // 1.5MHz/64 = 23437Hz  period = 1/15625Hz = 0.0000426
+        TIMER_PERIOD1,                      // When reach 23470, will trigger interrupt.  Delay/0.0000426 = 23470. Delay = 0.99 seconds
         TIMER_A_TAIE_INTERRUPT_DISABLE,     // Disable Timer interrupt
         TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE, // Enable CCR0 interrupt
         TIMER_A_DO_CLEAR                    // Clear value
@@ -234,8 +244,6 @@ void Motor_Config()
 
 int main(void)
 {
-    car_position = 1;
-
     /* Halting the watchdog */
     MAP_WDT_A_holdTimer();
 
@@ -259,20 +267,23 @@ int main(void)
 
     /* PID: Configuring Timer*/
     Timer_A_configureUpMode(TIMER_A1_BASE, &speed_timer);
+    Timer_A_configureUpMode(TIMER_A3_BASE, &ultrasonic_timer);
 
     /* Configuring SysTick to trigger at 300000 (MCLK is 3MHz so this will make
         * it toggle every 0.1s) */
-    SysTick_enableModule();
-    SysTick_setPeriod(5000000);
-    SysTick_enableInterrupt();
+    //SysTick_enableModule();
+    //SysTick_setPeriod(10000000);
+    //SysTick_enableInterrupt();
 
     /* Enabling interrupts */
     Interrupt_enableInterrupt(INT_TA1_0);
+    Interrupt_enableInterrupt(INT_TA3_0);
     // Interrupt_enableInterrupt(INT_PORT3);
     Interrupt_enableInterrupt(INT_PORT4);
     Interrupt_enableInterrupt(INT_PORT5);
 
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
+    Timer_A_startCounter(TIMER_A3_BASE, TIMER_A_UP_MODE);
     Interrupt_enableSleepOnIsrExit();
     Interrupt_enableMaster();
 
@@ -342,6 +353,7 @@ void PORT4_IRQHandler(void)
 void PORT5_IRQHandler(void)
 {
     uint32_t status_5 = GPIO_getEnabledInterruptStatus(GPIO_PORT_P5);
+
     Interrupt_disableInterrupt(INT_TA1_0);
     Timer_A_stopTimer(TIMER_A1_BASE);
 
@@ -358,10 +370,9 @@ void PORT5_IRQHandler(void)
             right_wheel.dutyCycle = 4700;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-            Delay(10000);
-            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            Delay(1000000);
+            //GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
             Interrupt_enableInterrupt(INT_TA1_0);
-            SysTick_enableInterrupt();
             Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
             GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN4);
             notchesdetected_left = 0;
@@ -370,14 +381,14 @@ void PORT5_IRQHandler(void)
         /*When Line Sensor detects light*/
         else if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN4) == 1)
         {
-            left_wheel.dutyCycle = 100;
-            right_wheel.dutyCycle = 2000;
+            left_wheel.dutyCycle = 1000;
+            right_wheel.dutyCycle = 3000;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Interrupt_disableInterrupt(INT_PORT5);
-            Delay(100000);
+            Delay(1000000);
             Interrupt_enableInterrupt(INT_PORT5);
-            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            //GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
             notchesdetected_left = 0;
             notchesdetected_right = 0;
         }
@@ -398,10 +409,9 @@ void PORT5_IRQHandler(void)
             right_wheel.dutyCycle = 4700;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-            Delay(10000);
-            GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            Delay(1000000);
+            //GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
             Interrupt_enableInterrupt(INT_TA1_0);
-            SysTick_enableInterrupt();
             GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN5);
             notchesdetected_left = 0;
             notchesdetected_right = 0;
@@ -409,62 +419,95 @@ void PORT5_IRQHandler(void)
         /*When Line Sensor detects light*/
         else if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN5) == 1)
         {
-            left_wheel.dutyCycle = 2000;
-            right_wheel.dutyCycle = 100;
+            left_wheel.dutyCycle = 3000;
+            right_wheel.dutyCycle = 1000;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Interrupt_disableInterrupt(INT_PORT5);
-            Delay(100000);
+            Delay(1000000);
             Interrupt_enableInterrupt(INT_PORT5);
-            GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            //GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN1);
             notchesdetected_left = 0;
             notchesdetected_right = 0;
         }
     }
 }
 
-void SysTick_Handler(void)
+void TA3_0_IRQHandler(void)
 {
     float value = getHCSR04Distance();
     printf("%f\n", value);
+
+    Interrupt_disableInterrupt(INT_PORT5);
+
     if (value < MIN_DISTANCE)
     {
+        right_wheel.dutyCycle = 2000;
+        left_wheel.dutyCycle = 2000;
 
+        GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
         Interrupt_disableInterrupt(INT_TA1_0);
-        Interrupt_disableInterrupt(INT_PORT5);
-        if (car_position == 1)
-        {
-            right_wheel.dutyCycle = 2000;
-            left_wheel.dutyCycle = 100;
-            GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
-        }
-
-        if (car_position == 0)
-        {
-            right_wheel.dutyCycle = 100;
-            left_wheel.dutyCycle = 2000;
-            GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
-        }
-
-        if (car_position == 1)
-        {
-            car_position = 0;
-        }
-        else if (car_position == 0)
-        {
-            car_position = 1;
-        }
 
         //Adjust wheel speed accordingly
         Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
         Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-        SysTick_disableInterrupt();
-        Delay(100000);
+        Delay(1000000);
+    }
+    else
+    {
+        right_wheel.dutyCycle = 2000;
+        left_wheel.dutyCycle = 2000;
 
-        left_wheel.dutyCycle = 4000;
-        right_wheel.dutyCycle = 4700;
+        GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+
+        //Adjust wheel speed accordingly
         Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
         Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-        Interrupt_enableInterrupt(INT_PORT5);
+        Delay(1000000);
     }
+
+    Interrupt_enableInterrupt(INT_PORT5);
 }
+
+//
+//void SysTick_Handler(void)
+//{
+//    float value = getHCSR04Distance();
+//    printf("%f\n", value);
+//
+//    Interrupt_disableInterrupt(INT_PORT5);
+//
+//    if (value < MIN_DISTANCE)
+//    {
+//        right_wheel.dutyCycle = 1000;
+//        left_wheel.dutyCycle = 1000;
+//
+//        SysTick_disableInterrupt();
+//
+//        GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+//        Interrupt_disableInterrupt(INT_TA1_0);
+//
+//        //Adjust wheel speed accordingly
+//        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+//        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+//        Delay(1000000);
+//
+//        SysTick_enableInterrupt();
+//    }
+//    else
+//    {
+//        right_wheel.dutyCycle = 1000;
+//        left_wheel.dutyCycle = 1000;
+//
+//        GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+//
+//        //Adjust wheel speed accordingly
+//        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+//        Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+//        Delay(1000000);
+//    }
+//
+//
+//    Interrupt_enableInterrupt(INT_PORT5);
+//
+//}
