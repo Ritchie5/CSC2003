@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "test_(new algo)": "c"
+        "test_(new algo)": "c",
+        "testcode": "c"
     }
 }

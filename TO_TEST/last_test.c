@@ -451,7 +451,7 @@ void TA3_0_IRQHandler(void)
         //Adjust wheel speed accordingly
         Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
         Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-        Delay(1000000);
+        Delay(100000);
     }
     else
     {
@@ -463,7 +463,7 @@ void TA3_0_IRQHandler(void)
         //Adjust wheel speed accordingly
         Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
         Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-        Delay(1000000);
+        Delay(100000);
     }
 
     Interrupt_enableInterrupt(INT_PORT5);

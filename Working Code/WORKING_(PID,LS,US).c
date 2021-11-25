@@ -354,30 +354,31 @@ void PORT5_IRQHandler(void)
         {
 
             left_wheel.dutyCycle = 4000;
-            right_wheel.dutyCycle = 4700;
+            right_wheel.dutyCycle = 4800;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Delay(10000);
             GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+
             Interrupt_enableInterrupt(INT_TA1_0);
             Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
-            GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN4);
             notchesdetected_left = 0;
             notchesdetected_right = 0;
+
+            GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN4);
         }
         /*When Line Sensor detects light*/
         else if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN4) == 1)
         {
-            left_wheel.dutyCycle = 100;
-            right_wheel.dutyCycle = 2000;
-            Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
-            Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-            Interrupt_disableInterrupt(INT_PORT5);
-            Delay(100000);
-            Interrupt_enableInterrupt(INT_PORT5);
-            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
-            notchesdetected_left = 0;
-            notchesdetected_right = 0;
+            if (right_wheel.dutyCycle != 3500)
+            {
+                left_wheel.dutyCycle = 1000;
+                right_wheel.dutyCycle = 3500;
+                Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+                Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+                Delay(100000);
+                GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            }
         }
     }
 
@@ -398,24 +399,26 @@ void PORT5_IRQHandler(void)
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Delay(10000);
             GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
+
             Interrupt_enableInterrupt(INT_TA1_0);
-            GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN5);
+            Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
             notchesdetected_left = 0;
             notchesdetected_right = 0;
+
+            GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN5);
         }
         /*When Line Sensor detects light*/
         else if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN5) == 1)
         {
-            left_wheel.dutyCycle = 2000;
-            right_wheel.dutyCycle = 100;
-            Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
-            Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-            Interrupt_disableInterrupt(INT_PORT5);
-            Delay(100000);
-            Interrupt_enableInterrupt(INT_PORT5);
-            GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN1);
-            notchesdetected_left = 0;
-            notchesdetected_right = 0;
+            if (left_wheel.dutyCycle != 3500)
+            {
+                left_wheel.dutyCycle = 3500;
+                right_wheel.dutyCycle = 1000;
+                Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
+                Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
+                Delay(100000);
+                GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            }
         }
     }
 }
