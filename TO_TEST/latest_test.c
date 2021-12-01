@@ -444,30 +444,30 @@ void SysTick_Handler(void)
     //    if (value < 15.0) //MIN_DISTANCE)
     //    {
     //
-    //        Interrupt_disableInterrupt(INT_TA1_0);
-    //        // Interrupt_disableInterrupt(INT_PORT5);
-    //        if (car_position == 1)
-    //        {
-    //            right_wheel.dutyCycle = 3700;
-    //            left_wheel.dutyCycle = 2000;
-    //            GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
-    //        }
-    //
-    //        if (car_position == 0)
-    //        {
-    //            right_wheel.dutyCycle = 2700;
-    //            left_wheel.dutyCycle = 3000;
-    //            GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
-    //        }
-    //
-    //        if (car_position == 1)
-    //        {
-    //            car_position = 0;
-    //        }
-    //        else if (car_position == 0)
-    //        {
-    //            car_position = 1;
-    //        }
+           Interrupt_disableInterrupt(INT_TA1_0);
+           // Interrupt_disableInterrupt(INT_PORT5);
+           if (car_position == 1)
+           {
+               right_wheel.dutyCycle = 3700;
+               left_wheel.dutyCycle = 2000;
+               GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+           }
+    
+           if (car_position == 0)
+           {
+               right_wheel.dutyCycle = 2700;
+               left_wheel.dutyCycle = 3000;
+               GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+           }
+    
+           if (car_position == 1)
+           {
+               car_position = 0;
+           }
+           else if (car_position == 0)
+           {
+               car_position = 1;
+           }
     //
     //        //Adjust wheel speed accordingly
     //        Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);

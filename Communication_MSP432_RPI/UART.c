@@ -137,10 +137,6 @@ void EUSCIA0_IRQHandler(void)
         {
             GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
-        if (a == 'b')
-        {
-            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
-        }
 
         UART_transmitData(EUSCI_A0_BASE, UART_receiveData(EUSCI_A0_BASE));
     }

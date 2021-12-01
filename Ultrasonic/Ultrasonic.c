@@ -4,19 +4,7 @@
 #define MIN_DISTANCE 10.0f
 #define TICKPERIOD 1000
 
-#define TIMER_PERIOD 0x2DC6 //0x5BAE for one second
 uint32_t SR04IntTimes;
-
-/* PID: Timer for PID controller to run every 1 second*/
-const Timer_A_UpModeConfig speed_timer =
-    {
-        TIMER_A_CLOCKSOURCE_SMCLK,          // SMCLK Clock Source
-        TIMER_A_CLOCKSOURCE_DIVIDER_64,     // 1.5MHz/64 = 23437Hz  period = 1/15625Hz = 0.0000426
-        TIMER_PERIOD,                       // When reach 23470, will trigger interrupt.  Delay/0.0000426 = 23470. Delay = 0.99 seconds
-        TIMER_A_TAIE_INTERRUPT_DISABLE,     // Disable Timer interrupt
-        TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE, // Enable CCR0 interrupt
-        TIMER_A_DO_CLEAR                    // Clear value
-};
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -141,8 +129,8 @@ uint32_t main(void)
 
     /* Configuring SysTick to trigger at 300000 (MCLK is 3MHz so this will make
     * it toggle every 0.1s) */
-    Timer_A_configureUpMode(TIMER_A1_BASE, &speed_timer);
-    Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
+    SysTick_enableModule();
+    SysTick_setPeriod(300000);
     Interrupt_enableSleepOnIsrExit();
     SysTick_enableInterrupt();
     /* Enabling MASTER interrupts */
@@ -154,7 +142,7 @@ uint32_t main(void)
     }
 }
 
-void TA1_0_IRQHandler(void)
+void SysTick_Handler(void)
 {
 
     float value = getHCSR04Distance();
