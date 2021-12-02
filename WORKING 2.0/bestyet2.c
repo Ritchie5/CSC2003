@@ -1,18 +1,3 @@
-/*************************************************************************************************************
- *                                          MSP432P401
- *                                      ------------------
- *                               /|\|                      |
- *                                | |                      |
- *                                --|RST                   |
- *                                  |                      |
- *                                  |                      |
- *                                  |                 P2.4 |--> Output PWM (right wheel)
- *                                  |                 P2.6 |--> Output PWM (left wheel)
- *                                  |                      |
- *                                  |                      |
- *                                  |                      |
- *
- **************************************************************************************************************/
 /* DriverLib Includes */
 #include <ti/devices/msp432p4xx/driverlib/driverlib.h>
 
@@ -270,12 +255,15 @@ void UART_Config()
     /* Enabling interrupts (Rx) */
     UART_enableInterrupt(EUSCI_A0_BASE, EUSCI_A_UART_RECEIVE_INTERRUPT);
     Interrupt_enableInterrupt(INT_EUSCIA0);
+
+    uPrintf("\r\n");
 }
 
 int main(void)
 {
     car_position = 1;
     ram = 1;
+
     /* Halting the watchdog */
     MAP_WDT_A_holdTimer();
 
@@ -290,6 +278,9 @@ int main(void)
 
     /* Line Sensor: Configuring Line Sensor pins*/
     LineSensor_Config();
+
+    /* UART */
+    UART_Config();
 
     Initalise_HCSR04();
 
@@ -346,7 +337,13 @@ void EUSCIA0_IRQHandler(void)
         if (a == 'a')
         {
             ram = 0;
-            GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN2);
+        }
+
+        if (a == 'b')
+        {
+            ram = 1;
+            GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN2);
         }
 
         UART_transmitData(EUSCI_A0_BASE, UART_receiveData(EUSCI_A0_BASE));
@@ -366,13 +363,13 @@ void TA1_0_IRQHandler(void)
         if (notchesdetected_left > notchesdetected_right)
         {
             left_wheel.dutyCycle += 100;
-            GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            // GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
 
         if (notchesdetected_right > notchesdetected_left)
         {
             right_wheel.dutyCycle += 100;
-            GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            // GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
         }
 
         //Keeps PWM speed under 5100
@@ -452,7 +449,7 @@ void PORT5_IRQHandler(void)
                 Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
                 Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
                 Delay(300000);
-                GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+                //GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
             }
         }
     }
@@ -476,7 +473,7 @@ void PORT5_IRQHandler(void)
             notchesdetected_right = 0;
             SysTick_enableModule();
 
-            GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN5);
+            //GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN5);
         }
         /*When Line Sensor detects light*/
         else if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN5) == 1)
@@ -502,6 +499,8 @@ void SysTick_Handler(void)
     float value = getHCSR04Distance();
     printf("\n%f", value);
 
+    //char str[] = "AI has detected";
+
     if (value < MIN_DISTANCE)
     {
         SysTick_disableModule();
@@ -512,16 +511,15 @@ void SysTick_Handler(void)
         if (ram == 0){
             if (car_position == 1)
             {
+                //printf("%s", str);
                 right_wheel.dutyCycle += 2000;
-                GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+                //GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
             }
-
             if (car_position == 0)
             {
                 left_wheel.dutyCycle += 1000;
-                GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+                //GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
             }
-
             if (car_position == 1)
             {
                 car_position = 0;
@@ -531,11 +529,13 @@ void SysTick_Handler(void)
                 car_position = 1;
             }
 
+
             //Adjust wheel speed accordingly
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Delay(10000);
         }
+        //GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
 
     }
     else
@@ -545,7 +545,7 @@ void SysTick_Handler(void)
         Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
         Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
         Delay(100000);
-        GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
+        //GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
     }
 
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);

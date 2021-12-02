@@ -37,6 +37,8 @@ uint32_t notchesdetected_right;
 
 uint32_t car_position;
 
+/* 
+
 /* Motor: Timer_A PWM Configuration Parameter */
 Timer_A_PWMConfig left_wheel =
     {
