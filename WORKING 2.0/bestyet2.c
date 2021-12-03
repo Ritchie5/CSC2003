@@ -267,20 +267,17 @@ int main(void)
     /* Halting the watchdog */
     MAP_WDT_A_holdTimer();
 
-    /* PID: Configure PID(Wheel Encoder) controller GPIO Pins*/
+    /* PID: Configure PID(Wheel Encoder) controller GPIO Pins */
     PID_Config();
 
-    /* Motor: Configuring Motor GPIO Pins*/
+    /* Motor: Configuring Motor GPIO Pins */
     Motor_Config();
 
-    /* LED: Debugging purpose*/
+    /* LED: Debugging purpose */
     LED_Config();
 
-    /* Line Sensor: Configuring Line Sensor pins*/
+    /* Line Sensor: Configuring Line Sensor pins */
     LineSensor_Config();
-
-    /* UART */
-    UART_Config();
 
     Initalise_HCSR04();
 
@@ -290,6 +287,9 @@ int main(void)
 
     /* PID: Configuring Timer*/
     Timer_A_configureUpMode(TIMER_A1_BASE, &speed_timer);
+
+    /* UART */
+    UART_Config();
 
     /* Configuring SysTick to trigger at 300000 (MCLK is 3MHz so this will make
         * it toggle every 0.1s) */
@@ -430,7 +430,7 @@ void PORT5_IRQHandler(void)
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Delay(100000);
-            GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            //GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
 
             Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
             notchesdetected_left = 0;
@@ -466,7 +466,7 @@ void PORT5_IRQHandler(void)
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Delay(100000);
-            GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            //GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
 
             Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
             notchesdetected_left = 0;
@@ -485,7 +485,7 @@ void PORT5_IRQHandler(void)
                 Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
                 Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
                 Delay(300000);
-                GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN1);
+                //GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN1);
             }
         }
     }
