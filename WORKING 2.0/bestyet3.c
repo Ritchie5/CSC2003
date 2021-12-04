@@ -17,11 +17,11 @@ uint32_t SR04IntTimes;
 #define Wheelcircumference 20.42035
 
 /* PID: Wheel Encoder Variable */
-uint32_t notchesdetected_left;
-uint32_t notchesdetected_right;
+volatile uint32_t notchesdetected_left;
+volatile uint32_t notchesdetected_right;
 
-uint32_t car_position;
-uint32_t ram;
+volatile uint32_t car_position;
+volatile uint32_t ram;
 
 void uPrintf(unsigned char *TxArray);
 
@@ -43,7 +43,7 @@ Timer_A_PWMConfig right_wheel =
         10000,
         TIMER_A_CAPTURECOMPARE_REGISTER_3,
         TIMER_A_OUTPUTMODE_RESET_SET,
-        4700};
+        5000};
 
 /* PID: Timer for PID controller to run every 1 second*/
 const Timer_A_UpModeConfig speed_timer =
@@ -299,7 +299,7 @@ int main(void)
 
     /* Enabling interrupts */
     Interrupt_enableInterrupt(INT_TA1_0);
-    // Interrupt_enableInterrupt(INT_PORT3);
+    Interrupt_enableInterrupt(INT_PORT3);
     Interrupt_enableInterrupt(INT_PORT4);
     Interrupt_enableInterrupt(INT_PORT5);
 
@@ -310,7 +310,7 @@ int main(void)
     /* Sleeping when not in use */
     while (1)
     {
-        PCM_gotoLPM0();
+        PCM_gotoLPM3InterruptSafe();
     }
 }
 
@@ -358,22 +358,28 @@ void TA1_0_IRQHandler(void)
     // Add Threshold of difference of 60 notches (3 wheels rotation) between right wheel and left wheel before triggering PID controller
     // if (notch_difference >= 100 || notch_difference <= -100 ){
 
-    if (notchesdetected_left > 5 || notchesdetected_right > 5)
+    if (notchesdetected_left > 20 || notchesdetected_right > 20)
     {
         if (notchesdetected_left > notchesdetected_right)
         {
-            left_wheel.dutyCycle += 100;
-            // GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            right_wheel.dutyCycle += 100;
+            GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            printf("right more");
+            printf("\n%d", left_wheel.dutyCycle);
+            printf("\n%d", right_wheel.dutyCycle);
         }
 
         if (notchesdetected_right > notchesdetected_left)
         {
-            right_wheel.dutyCycle += 100;
-            // GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            left_wheel.dutyCycle += 100;
+            GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+            printf("left more");
+            printf("\n%d", left_wheel.dutyCycle);
+            printf("\n%d", right_wheel.dutyCycle);
         }
 
         //Keeps PWM speed under 5100
-        if (right_wheel.dutyCycle >= 4900 || left_wheel.dutyCycle >= 4900)
+        if (right_wheel.dutyCycle >= 5000 || left_wheel.dutyCycle >= 5000)
         {
             right_wheel.dutyCycle -= 100;
             left_wheel.dutyCycle -= 100;
@@ -426,7 +432,7 @@ void PORT5_IRQHandler(void)
         {
 
             left_wheel.dutyCycle = 4000;
-            right_wheel.dutyCycle = 4900;
+            right_wheel.dutyCycle = 5000;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Delay(100000);
@@ -442,10 +448,10 @@ void PORT5_IRQHandler(void)
         /*When Line Sensor detects light*/
         else if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN4) == 1)
         {
-            if (right_wheel.dutyCycle != 3500)
+            if (left_wheel.dutyCycle != 4700)
             {
-                left_wheel.dutyCycle = 1000;
-                right_wheel.dutyCycle = 3500;
+                left_wheel.dutyCycle = 4000;
+                right_wheel.dutyCycle = 2800;
                 Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
                 Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
                 Delay(300000);
@@ -462,7 +468,7 @@ void PORT5_IRQHandler(void)
         if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN5) == 0)
         {
             left_wheel.dutyCycle = 4000;
-            right_wheel.dutyCycle = 4700;
+            right_wheel.dutyCycle = 5000;
             Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
             Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
             Delay(100000);
@@ -478,10 +484,10 @@ void PORT5_IRQHandler(void)
         /*When Line Sensor detects light*/
         else if (GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN5) == 1)
         {
-            if (left_wheel.dutyCycle != 3500)
+            if (right_wheel.dutyCycle != 4900)
             {
-                left_wheel.dutyCycle = 3500;
-                right_wheel.dutyCycle = 1000;
+                left_wheel.dutyCycle = 2000;
+                right_wheel.dutyCycle = 4900;
                 Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
                 Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
                 Delay(300000);
@@ -513,12 +519,12 @@ void SysTick_Handler(void)
             if (car_position == 1)
             {
                 //printf("%s", str);
-                right_wheel.dutyCycle += 2000;
+                right_wheel.dutyCycle += 1500;
                 //GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
             }
             if (car_position == 0)
             {
-                left_wheel.dutyCycle += 1000;
+                left_wheel.dutyCycle += 1500;
                 //GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
             }
             if (car_position == 1)
@@ -539,11 +545,11 @@ void SysTick_Handler(void)
     }
     else
     {
-        left_wheel.dutyCycle = 4000;
-        right_wheel.dutyCycle = 4700;
+        //        left_wheel.dutyCycle = 5000;
+        //        right_wheel.dutyCycle = 5000;
         Timer_A_generatePWM(TIMER_A0_BASE, &right_wheel);
         Timer_A_generatePWM(TIMER_A0_BASE, &left_wheel);
-        Delay(100000);
+        //        Delay(100000);
         //GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
     }
 
